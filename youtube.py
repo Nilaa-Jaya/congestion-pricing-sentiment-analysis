@@ -11,6 +11,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import pandas as pd
 
 # Load environment variables
 load_dotenv()
@@ -102,6 +103,35 @@ def get_video_comments(youtube, video_id):
         return []
 
 
+def load_comments(csv_file="comments.csv"):
+    """
+    Load comments from CSV into a pandas DataFrame.
+
+    Args:
+            csv_file: Path to the CSV file (default: comments.csv)
+
+    Returns:
+            pandas DataFrame with parsed dates and types
+    """
+    try:
+        df = pd.read_csv(csv_file)
+
+        # Convert published_at to datetime
+        df["published_at"] = pd.to_datetime(df["published_at"])
+
+        # Ensure like_count is integer
+        df["like_count"] = df["like_count"].astype(int)
+
+        return df
+
+    except FileNotFoundError:
+        print(f"Error: File '{csv_file}' not found")
+        return None
+    except Exception as e:
+        print(f"Error loading CSV: {e}")
+        return None
+
+
 def scrape_comments(query, max_videos=10, output_file="comments.csv"):
     """
     Main orchestrator function to search videos and scrape comments.
@@ -189,10 +219,34 @@ def main():
         default="comments.csv",
         help="Output CSV filename (default: comments.csv)",
     )
+    parser.add_argument(
+        "-a",
+        "--analyze",
+        type=str,
+        metavar="FILE",
+        help="Load and display basic stats from existing CSV file",
+    )
 
     args = parser.parse_args()
 
-    scrape_comments(args.query, args.max_videos, args.output)
+    if args.analyze:
+        df = load_comments(args.analyze)
+        if df is not None:
+            print(f"\n=== Analysis of {args.analyze} ===\n")
+            print(f"Total comments: {len(df)}")
+            print(f"Unique videos: {df['video_id'].nunique()}")
+            print(f"Unique authors: {df['author'].nunique()}")
+            print(
+                f"Date range: {df['published_at'].min()} to {df['published_at'].max()}"
+            )
+            print("\nTop 5 authors by comment count:")
+            print(df["author"].value_counts().head())
+            print("\nTop 5 most liked comments:")
+            print(
+                df.nlargest(5, "like_count")[["author", "like_count", "comment_text"]]
+            )
+    else:
+        scrape_comments(args.query, args.max_videos, args.output)
 
 
 if __name__ == "__main__":
