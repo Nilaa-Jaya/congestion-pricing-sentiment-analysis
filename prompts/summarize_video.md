@@ -1,31 +1,49 @@
 # Video Summarization Prompt
 
-You are analyzing a YouTube video transcript about NYC congestion pricing. Your task is to provide a concise summary that captures the key information needed for understanding viewer comments.
+You are a research assistant analyzing YouTube videos related to NYC congestion pricing.
 
-## Instructions
+Your goal is to produce a concise, structured summary of what the video communicates, so that viewer comments can later be interpreted accurately.
 
-Analyze the transcript and provide a summary that includes:
+Use only the provided title, description, and transcript. Do not invent or add outside information.
 
-1. **Main Topic**: What specific aspect of NYC congestion pricing does this video cover?
+## Task
 
-2. **Stance/Perspective**: What is the overall stance or perspective of the video?
-   - Supportive of congestion pricing
-   - Critical of congestion pricing
-   - Neutral/balanced analysis
-   - Other perspective
+Using all the text provided (video metadata and transcript), summarize the entire video.
 
-3. **Key Arguments**: What are the main arguments or points made?
-   - List 3-5 key points discussed
-   - Include both positive and negative aspects if mentioned
+## Output Requirements
 
-4. **Context**: Any important context that would help understand viewer reactions?
-   - Timing (when was this video published?)
-   - Focus (policy details, impacts, political debate, personal stories, etc.)
+Return a structured JSON object with these fields:
 
-## Output Format
+**summary_text**: Concise, neutral overview of what the video says about NYC congestion pricing, 150-300 words.
 
-Provide your summary as a single paragraph (150-300 words) that flows naturally and covers all the above elements. This summary will be used to provide context when analyzing viewer comments.
+**stance_congestion_pricing**: One of the following:
 
-## Example
+- "strongly_supportive" - Strongly supports congestion pricing
+- "supportive" - Generally supports congestion pricing
+- "neutral_or_mixed" - Presents multiple perspectives or balanced view
+- "skeptical" - Critical or questioning of congestion pricing
+- "strongly_oppose" - Strongly opposes congestion pricing
+- "unclear" - Video barely discusses the policy or lacks discernible position
 
-"This video from The New York Times, published in May 2025, examines the early results of NYC's congestion pricing policy after its first few months of implementation. The video takes a balanced analytical approach, presenting both positive outcomes (reduced traffic congestion in Manhattan, improved bus speeds, decreased air pollution) and negative impacts (financial burden on outer-borough commuters, concerns about equity). Key arguments include data showing 15% reduction in vehicle traffic, interviews with commuters struggling with the $9-15 toll, and discussion of where the revenue is being allocated. The video also covers political backlash from suburban representatives and support from transit advocates. The overall tone is investigative rather than advocatory, aiming to present multiple perspectives on this controversial policy."
+**stance_confidence**: Float between 0 and 1 representing confidence in stance classification.
+
+**key_arguments**: List of 3-10 concise bullet points, each a paraphrase of a key claim or argument made in the video. Each bullet should be a distinct point.
+
+**tone**: One of the following:
+
+- "objective" - Neutral, fact-based presentation
+- "persuasive" - Attempting to convince viewers of a position
+- "critical" - Questioning or skeptical tone
+- "humorous" - Uses humor or satire
+- "emotional" - Appeals to emotions
+- "mixed" - Combination of multiple tones
+
+## Rules
+
+- Focus on what the video communicates about NYC congestion pricing
+- If multiple perspectives are shown, classify stance as "neutral_or_mixed"
+- Keep the summary factual and concise (150-300 words)
+- Use "unclear" if the video barely discusses the policy or lacks a discernible position
+- The summary should stand on its own - avoid quoting exact sentences unless essential
+- Keep total output concise (≤350 words across all fields)
+- Each key argument should be distinct and meaningful
