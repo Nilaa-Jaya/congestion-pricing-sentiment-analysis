@@ -29,8 +29,8 @@ class CommentSentiment(BaseModel):
 	tone: Literal["sarcastic", "angry", "frustrated", "supportive", "informative", "humorous", "neutral", "mixed"]
 
 # Rate limiting configuration
-REQUESTS_PER_MINUTE = 50
-DELAY_BETWEEN_REQUESTS = 60.0 / REQUESTS_PER_MINUTE  # ~1.2 seconds
+REQUESTS_PER_MINUTE = 400
+DELAY_BETWEEN_REQUESTS = 60.0 / REQUESTS_PER_MINUTE  # ~0.15 seconds
 
 # Checkpoint configuration
 CHECKPOINT_INTERVAL = 100  # Save progress every N comments
@@ -156,20 +156,22 @@ def load_checkpoint(output_file):
 		output_file: Path to output CSV file
 
 	Returns:
-		Set of already-processed row indices
+		Tuple of (set of already-processed row indices, list of existing result dicts)
 	"""
 	if not os.path.exists(output_file):
-		return set()
+		return set(), []
 
 	try:
 		df = pd.read_csv(output_file)
 		# Assuming we added a row_index column
 		if "row_index" in df.columns:
-			return set(df["row_index"].tolist())
-		return set()
+			processed_indices = set(df["row_index"].tolist())
+			existing_results = df.to_dict('records')
+			return processed_indices, existing_results
+		return set(), []
 	except Exception as e:
 		print(f"Warning: Could not load checkpoint: {e}")
-		return set()
+		return set(), []
 
 
 def save_checkpoint(output_file, results, fieldnames):
@@ -245,7 +247,7 @@ def label_comments(comments_file=None, summaries_file=None, output_file=None, ma
 		print(f"Processing {len(df)} comments...")
 
 	# Load checkpoint to support resume
-	processed_indices = load_checkpoint(output_file)
+	processed_indices, results = load_checkpoint(output_file)
 	if processed_indices:
 		print(f"Found existing results: {len(processed_indices)} comments already processed")
 
@@ -253,7 +255,6 @@ def label_comments(comments_file=None, summaries_file=None, output_file=None, ma
 	fieldnames = df.columns.tolist() + ["sentiment", "stance_congestion_pricing_comment", "stance_confidence_comment", "tone"]
 
 	# Process comments
-	results = []
 	skipped = 0
 
 	for i, row in df.iterrows():
