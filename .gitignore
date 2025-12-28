@@ -3,6 +3,7 @@
 
 # Data files
 *.csv
+*.zip
 
 # Jupyter notebooks
 *.ipynb
